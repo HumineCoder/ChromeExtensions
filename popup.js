@@ -35,6 +35,18 @@ jQuery( document ).ready(function() {
       $('.text-content').hide();
     }
   });
+  jQuery(".menu-link").on('click', function(event) {
+    var anchor = this;
+
+    getEntriesFromStorage(function(result) {
+      var entries = result != null ? (result['entries'] != null ? result['entries'] : []) : [];
+      console.log('exporting:'+JSON.stringify(entries));
+      anchor.onclick = function() {
+          anchor.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(entries));
+          anchor.download = 'temptext.json';
+      };
+    });
+  });
   refreshAndFocus();
 });
 
