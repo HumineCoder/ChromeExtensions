@@ -2,13 +2,14 @@ var textBoxSelector = document.getElementsByClassName('searchIdInput')[0];
 var searchHis = document.getElementById('searchHistory');
 var tempTextBox = jQuery("<input />").attr({ type: 'text', id: 'tempbox' });
 var rowsSelector = "#text-rows";
+$('.text-content').hide();
 
 jQuery( document ).ready(function() {
   registerTextBoxEnterEvent("",jQuery(textBoxSelector),moveText);
   /**
   When storage changes we synchronize the view
   */
- chrome.storage.onChanged.addListener(function(changes, namespace) {
+ chrome.storage.onChanged.addListener(function(changes, namespace) { // Remove this event once refresh issue fixed (like DELETE)
   console.log('chrome storage changed');
 
   for (key in changes) {
@@ -22,9 +23,17 @@ jQuery( document ).ready(function() {
     event.preventDefault();
     deleteRow(jQuery(this));
   });
-  jQuery(rowsSelector).on('click', '.copy', function(event) {
+  jQuery(rowsSelector).on('click', '.link', function(event) {
+    alert();
     event.preventDefault();
     copyText(jQuery(this));
+  });
+  $('.showHistory').change(function() {
+    if($(this).is(":checked")) {
+      $('.text-content').show();
+    }else{
+      $('.text-content').hide();
+    }
   });
   refreshAndFocus();
 });
@@ -117,7 +126,7 @@ Adds a row to the div container to be displayed in the view, it also makes sure 
 */
 function prependRow(uniqueId, text, rows) {
     var deleteIcon = buildDeleteIcon();
-    var copyIcon = buildCopyIcon();
+    var copyIcon = buildLinkIcon();
     var newRow = jQuery("<div class='row' id="+ uniqueId +">" + deleteIcon + copyIcon+"</div>");
     registerInlineTextBox(newRow);
     var textSpan = jQuery("<span class='text-row' id='text"+uniqueId+"' />").text(text);
@@ -182,10 +191,15 @@ function removeAndClearTempBox() {
 }
 
 function registerTextBoxEnterEvent(previousValue, textBox, callback) {
+  console.log('Enter event has been registered')
     textBox.off();
     textBox.on('keypress', function (event) {
       if(event.which === 13){
-        callback(previousValue);
+        if(event.currentTarget.className === 'searchIdInput'){
+          callback(previousValue);
+        }else{
+          callback(previousValue);
+        }
       }
     });
 }
@@ -199,8 +213,8 @@ function buildDeleteIcon() {
   /**
   Constructs a string with the html for displaying the copy icon
   */
-  function buildCopyIcon() {
-    return "<span><a href='#' class='copy'><img src='linkIcon.png' alt='copy' title='copy to clipboard' /></a>&nbsp;</span>";
+  function buildLinkIcon() {
+    return "<span><a href='#' class='copy'><img src='restoreIcon.png' alt='copy' title='copy to clipboard' /></a>&nbsp;</span>";
   }
   
 /**
@@ -212,15 +226,15 @@ function extractUniqueIdFromTempBox() {
     return uniqueId;
 }
 
-textBoxSelector.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      moveToHistory();
-        chrome.tabs.create({'url': "https://www.google.co.in/"}, function(tab) {
-            alert("Tab Opened");
-          });
-        //window.open("https://www.google.co.in/");
-    }
-});
+//textBoxSelector.addEventListener("keydown", function(event) {
+//    if (event.key === "Enter") {
+//      moveToHistory();
+//        chrome.tabs.create({'url': "https://www.google.co.in/"}, function(tab) {
+//            alert("Tab Opened");
+//          });
+ //       //window.open("https://www.google.co.in/");
+//    }
+//});
 
 function moveToHistory(){
     var targetText = textBoxSelector.value;
@@ -312,6 +326,7 @@ function getEntriesFromStorage(callback) {
     getEntriesFromStorage(function(result) {
       var entries = result != null ? (result['entries'] != null ? result['entries'] : []) : [];
       var index = findInEntries(entries, id);
+      //jQuery('#'+id).remove(); Change in Future for delete operation
       entries.splice(index, 1);
       setEntriesToStorage(entries);
     });
